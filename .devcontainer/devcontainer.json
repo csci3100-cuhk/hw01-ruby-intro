@@ -1,18 +1,18 @@
 {
-  "name": "Ruby Intro",
-  "image": "mcr.microsoft.com/devcontainers/ruby:3.3",
+  "name": "CSCI3100 Course Environment",
+  "build": {
+      "dockerfile": "Dockerfile"
+  },
+  "settings": {
+      "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "extensions": [
+      "rebornix.Ruby",
+      "castwide.solargraph",
+      "misogi.ruby-lucy",
+      "kaiwood.endwise",
+      "alexyz.cucumberautocomplete"
+  ],
   "postCreateCommand": "bundle install",
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "Shopify.ruby-lsp",
-        "connorshea.vscode-ruby-test-adapter"
-      ],
-      "settings": {
-        "editor.formatOnSave": true,
-        "editor.tabSize": 2
-      }
-    }
-  }
+  "remoteUser": "vscode"
 }
-
