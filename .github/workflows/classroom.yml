@@ -1,0 +1,69 @@
+name: Autograding Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3'
+        bundler-cache: true
+
+    - name: Install dependencies
+      run: bundle install
+
+    - name: Part 1 - Arrays, Hashes, and Enumerables
+      id: part1
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Part 1 - Arrays, Hashes, and Enumerables
+        setup-command: ""
+        command: bundle exec rspec spec/part1_spec.rb --format documentation
+        timeout: 10
+        max-score: 100
+
+    - name: Part 2 - Strings and Regular Expressions
+      id: part2
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Part 2 - Strings and Regular Expressions
+        setup-command: ""
+        command: bundle exec rspec spec/part2_spec.rb --format documentation
+        timeout: 10
+        max-score: 100
+
+    - name: Part 3 - Object Oriented Basics
+      id: part3
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Part 3 - Object Oriented Basics
+        setup-command: ""
+        command: bundle exec rspec spec/part3_spec.rb --format documentation
+        timeout: 10
+        max-score: 100
+
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        PART1_RESULTS: "${{steps.part1.outputs.result}}"
+        PART2_RESULTS: "${{steps.part2.outputs.result}}"
+        PART3_RESULTS: "${{steps.part3.outputs.result}}"
+      with:
+        runners: part1,part2,part3
+

@@ -1,0 +1,35 @@
+{
+  "tests": [
+    {
+      "name": "Part 1 - Arrays, Hashes, and Enumerables",
+      "setup": "bundle install",
+      "run": "bundle exec rspec spec/part1_spec.rb --format documentation",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 60,
+      "points": 100
+    },
+    {
+      "name": "Part 2 - Strings and Regular Expressions",
+      "setup": "",
+      "run": "bundle exec rspec spec/part2_spec.rb --format documentation",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 60,
+      "points": 100
+    },
+    {
+      "name": "Part 3 - Object Oriented Basics",
+      "setup": "",
+      "run": "bundle exec rspec spec/part3_spec.rb --format documentation",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 60,
+      "points": 100
+    }
+  ]
+}
+
