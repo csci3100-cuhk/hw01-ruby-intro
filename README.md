@@ -45,7 +45,7 @@ If you are working in Codio, you are ready to move on to the next part. If you a
 
 | Local computer setup |
 |-----|
-Ensure that Ruby 2.6.6 is installed.
+Ensure that Ruby 3.3.8 is installed.
 
 To ensure you have the rspec gem installed you need bundler and can then
 run bundle install like so:
