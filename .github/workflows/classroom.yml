@@ -17,20 +17,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      id: checkout
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
     - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
+      id: setup-ruby
+      uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b
       with:
         ruby-version: '3.3'
         bundler-cache: true
 
     - name: Install dependencies
+      id: install
       run: bundle install
 
     - name: Part 1 - Arrays, Hashes, and Enumerables
       id: part1
-      uses: classroom-resources/autograding-command-grader@v1
+      uses: classroom-resources/autograding-command-grader@d5b3fa6f50f7f629b7bfae0cc3e4c58852b412d5
       with:
         test-name: Part 1 - Arrays, Hashes, and Enumerables
         setup-command: ""
@@ -40,7 +43,7 @@ jobs:
 
     - name: Part 2 - Strings and Regular Expressions
       id: part2
-      uses: classroom-resources/autograding-command-grader@v1
+      uses: classroom-resources/autograding-command-grader@d5b3fa6f50f7f629b7bfae0cc3e4c58852b412d5
       with:
         test-name: Part 2 - Strings and Regular Expressions
         setup-command: ""
@@ -50,7 +53,7 @@ jobs:
 
     - name: Part 3 - Object Oriented Basics
       id: part3
-      uses: classroom-resources/autograding-command-grader@v1
+      uses: classroom-resources/autograding-command-grader@d5b3fa6f50f7f629b7bfae0cc3e4c58852b412d5
       with:
         test-name: Part 3 - Object Oriented Basics
         setup-command: ""
@@ -59,7 +62,8 @@ jobs:
         max-score: 100
 
     - name: Autograding Reporter
-      uses: classroom-resources/autograding-grading-reporter@v1
+      uses: classroom-resources/autograding-grading-reporter@d13b5912daf5042ac1b71bc38bdb4a6bcd61d8ca
+      if: always()
       env:
         PART1_RESULTS: "${{steps.part1.outputs.result}}"
         PART2_RESULTS: "${{steps.part2.outputs.result}}"
@@ -67,3 +71,78 @@ jobs:
       with:
         runners: part1,part2,part3
 
+    - name: Generate grade result
+      if: always()
+      env:
+        HEAD_SHA: ${{ github.sha }}
+        CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+        SETUP_RUBY_OUTCOME: ${{ steps.setup-ruby.outcome }}
+        INSTALL_OUTCOME: ${{ steps.install.outcome }}
+        PART1_RESULT: ${{ steps.part1.outputs.result }}
+        PART2_RESULT: ${{ steps.part2.outputs.result }}
+        PART3_RESULT: ${{ steps.part3.outputs.result }}
+      run: |
+        python3 - <<'PY'
+        import base64
+        import json
+        import os
+
+        definitions = [
+            ("Part 1 - Arrays, Hashes, and Enumerables", 100, "PART1_RESULT"),
+            ("Part 2 - Strings and Regular Expressions", 100, "PART2_RESULT"),
+            ("Part 3 - Object Oriented Basics", 100, "PART3_RESULT"),
+        ]
+        infrastructure = {
+            "checkout": os.environ.get("CHECKOUT_OUTCOME"),
+            "setup-ruby": os.environ.get("SETUP_RUBY_OUTCOME"),
+            "install": os.environ.get("INSTALL_OUTCOME"),
+        }
+        errors = [f"{name}={outcome or 'not_run'}" for name, outcome in infrastructure.items()
+                  if outcome != "success"]
+        tests = []
+        for name, maximum, env_name in definitions:
+            encoded = os.environ.get(env_name, "")
+            score = 0
+            status = "failed"
+            message = "Test did not produce a result"
+            if encoded:
+                try:
+                    payload = json.loads(base64.b64decode(encoded).decode())
+                    test = (payload.get("tests") or [{}])[0]
+                    score = test.get("score", 0)
+                    status = "passed" if score == maximum else "failed"
+                    message = test.get("message", "") or ""
+                except Exception as exc:
+                    errors.append(f"{name}: invalid grader output: {exc}")
+            tests.append({
+                "name": name,
+                "score": score,
+                "max_score": maximum,
+                "status": status,
+                "message": message,
+            })
+
+        result = {
+            "schema": "cuhk-csci3100-grade/v1",
+            "assignment": "hw01",
+            "head_sha": os.environ["HEAD_SHA"],
+            "score": sum(test["score"] for test in tests),
+            "max_score": 300,
+            "tests": tests,
+        }
+        if errors:
+            result["status"] = "grading_error"
+            result["message"] = "; ".join(errors)
+        with open("grade-result.json", "w", encoding="utf-8") as output:
+            json.dump(result, output, ensure_ascii=False, indent=2, allow_nan=False)
+            output.write("\n")
+        PY
+
+    - name: Upload grade result
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: csci3100-grade-result
+        path: grade-result.json
+        if-no-files-found: error
+        retention-days: 30
